@@ -1,0 +1,122 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: driveease-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-Vijayanand2005@}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${DB_PASSWORD:-Vijayanand2005@}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  eureka-server:
+    build:
+      context: .
+      args:
+        SERVICE_NAME: eureka-server
+    container_name: driveease-eureka
+    environment:
+      EUREKA_HOST: eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8761/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  user-service:
+    build:
+      context: .
+      args:
+        SERVICE_NAME: user-service
+    container_name: driveease-user-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: driveease_user_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-Vijayanand2005@}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!}
+    ports:
+      - "8081:8081"
+
+  vehicle-service:
+    build:
+      context: .
+      args:
+        SERVICE_NAME: vehicle-service
+    container_name: driveease-vehicle-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: driveease_vehicle_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-Vijayanand2005@}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!}
+    ports:
+      - "8082:8082"
+
+  booking-service:
+    build:
+      context: .
+      args:
+        SERVICE_NAME: booking-service
+    container_name: driveease-booking-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: driveease_booking_db
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD:-Vijayanand2005@}
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!}
+    ports:
+      - "8083:8083"
+
+  api-gateway:
+    build:
+      context: .
+      args:
+        SERVICE_NAME: api-gateway
+    container_name: driveease-api-gateway
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      user-service:
+        condition: service_started
+      vehicle-service:
+        condition: service_started
+      booking-service:
+        condition: service_started
+    environment:
+      EUREKA_URI: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET:-DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!}
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql_data:
