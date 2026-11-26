@@ -1,0 +1,97 @@
+services:
+  - type: web
+    name: driveease-eureka
+    runtime: docker
+    repo: https://github.com/Vijayanand0842/driveease-fleet
+    dockerfilePath: ./eureka-server/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: PORT
+        value: "8761"
+
+  - type: web
+    name: driveease-user
+    runtime: docker
+    repo: https://github.com/Vijayanand0842/driveease-fleet
+    dockerfilePath: ./user-service/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: PORT
+        value: "10000"
+      - key: EUREKA_URI
+        fromService:
+          name: driveease-eureka
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+        property: externalUrl
+      - key: JWT_SECRET
+        value: DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!
+
+  - type: web
+    name: driveease-vehicle
+    runtime: docker
+    repo: https://github.com/Vijayanand0842/driveease-fleet
+    dockerfilePath: ./vehicle-service/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: PORT
+        value: "10000"
+      - key: EUREKA_URI
+        fromService:
+          name: driveease-eureka
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+        property: externalUrl
+      - key: JWT_SECRET
+        value: DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!
+
+  - type: web
+    name: driveease-booking
+    runtime: docker
+    repo: https://github.com/Vijayanand0842/driveease-fleet
+    dockerfilePath: ./booking-service/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: PORT
+        value: "10000"
+      - key: EUREKA_URI
+        fromService:
+          name: driveease-eureka
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+        property: externalUrl
+      - key: JWT_SECRET
+        value: DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!
+
+  - type: web
+    name: driveease-gateway
+    runtime: docker
+    repo: https://github.com/Vijayanand0842/driveease-fleet
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: PORT
+        value: "10000"
+      - key: EUREKA_URI
+        fromService:
+          name: driveease-eureka
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+        property: externalUrl
+      - key: JWT_SECRET
+        value: DriveEaseFleetOperationsSuperSecretKeyForHS256Signing2026!
